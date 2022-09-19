@@ -1,13 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Our simple HTTP server</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
-  
+
   <script>
+
+
+    const handleResponse = async (response) => {
+      let contentType = response.headers.get('Content-Type');
+      const h1 = document.createElement('h1');
+      const p = document.createElement('p');
+      const content = document.querySelector("#content");
+
+
+      //If the server sent back json
+      if (contentType === 'application/json') {
+        const parsedResponse = JSON.parse(await response.text());
+        console.log(parsedResponse);
+        p.textContent = `Message: ${parsedResponse.message}`;
+        if(parsedResponse.id){
+          h1.textContent = parsedResponse.id;
+        }
+      } 
+      else if (contentType === 'text/xml') {
+        const parsedResponse = new window.DOMParser().parseFromString(await response.text(), 'text/xml');
+        console.log(parsedResponse);
+        p.textContent = `Message: ${parsedResponse.querySelector('message').textContent}`;
+        if(parsedResponse.querySelector('id')){
+          h1.textContent = parsedResponse.querySelector('id').textContent;
+        }
+      }
+
+      content.appendChild(h1);
+      content.appendChild(p);
+    }
+
+    const sendFetch = async (url, acceptedType) => {
+      const options = {
+        method: 'GET',
+        headers: { 'Accept': acceptedType },
+      }
+      let response = await fetch(url, options);
+      handleResponse(response);
+    };
+
+
+    const init = () => {
+      const sendButton = document.querySelector("#send");
+      const sendStatus = () => sendFetch(document.querySelector("#page").value, document.querySelector("#type").value);
+      sendButton.addEventListener('click', sendStatus);
+    };
+
+    window.onload = init;
 
   </script>
 </head>
+
 <body>
   <section id="top">
     <h3>Status Code Tests</h3>
@@ -29,4 +79,5 @@
   <section id="content">
   </section>
 </body>
+
 </html>
